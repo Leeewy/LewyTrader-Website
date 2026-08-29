@@ -579,6 +579,299 @@ html[data-theme="dark"] .theme-toggle-moon {
   white-space: pre-wrap;
 }
 
+.badge-type-buy {
+  color: var(--owned);
+  background: var(--owned-soft);
+}
+
+.badge-type-sell {
+  color: var(--score-low);
+  background: var(--score-low-bg);
+}
+
+.badge-type-no-action,
+.badge-type-none {
+  color: var(--muted);
+  background: var(--score-pill-bg);
+}
+
+.state-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  background: var(--score-pill-bg);
+}
+
+.state-pill.state-accepted {
+  color: var(--owned);
+  background: var(--owned-soft);
+}
+
+.state-pill.state-downgraded {
+  color: var(--score-mid);
+  background: var(--score-mid-bg);
+}
+
+.state-pill.state-short_circuited {
+  color: var(--muted);
+  background: var(--score-pill-bg);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.state-pill.state-failed {
+  color: var(--score-low);
+  background: var(--score-low-bg);
+}
+
+.state-pill.state-not_evaluated {
+  color: var(--muted);
+  background: var(--score-pill-bg);
+}
+
+.recommendation-row.outcome-degraded td:last-child {
+  font-weight: 600;
+}
+
+.recommendation-row.outcome-failed {
+  background: color-mix(in srgb, var(--score-low-bg) 35%, transparent);
+}
+
+.recommendation-row.outcome-short_circuited {
+  background: color-mix(in srgb, var(--score-pill-bg) 55%, transparent);
+}
+
+.recommendation-row.outcome-downgraded {
+  background: color-mix(in srgb, var(--score-mid-bg) 40%, transparent);
+}
+
+.rec-outcome-callout {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface-muted);
+}
+
+.rec-outcome-callout.outcome-accepted {
+  border-color: color-mix(in srgb, var(--owned) 35%, var(--border));
+  background: var(--owned-soft);
+}
+
+.rec-outcome-callout.outcome-downgraded {
+  border-color: color-mix(in srgb, var(--score-mid) 40%, var(--border));
+  background: var(--alert-warning);
+}
+
+.rec-outcome-callout.outcome-short_circuited {
+  background: var(--surface-muted);
+}
+
+.rec-outcome-callout.outcome-failed {
+  border-color: color-mix(in srgb, var(--score-low) 40%, var(--border));
+  background: var(--alert-error);
+}
+
+.rec-outcome-callout.outcome-not_evaluated {
+  background: var(--surface-muted);
+}
+
+.rec-outcome-title {
+  margin: 0 0 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.rec-outcome-summary {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.rec-null-attractiveness {
+  margin: 0 0 12px;
+}
+
+.rec-eval-reasons code,
+.rec-eval-warnings code {
+  font-size: 0.88rem;
+}
+
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.filter-section {
+  padding-bottom: 0;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: end;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 140px;
+}
+
+.filter-field-run {
+  min-width: 260px;
+  flex: 1 1 260px;
+}
+
+.rec-run-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 14px;
+  max-width: 420px;
+}
+
+.filter-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.filter-field select,
+.filter-field input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-muted);
+  color: var(--text);
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.filter-status {
+  margin: 0 0 2px auto;
+  font-size: 0.9rem;
+}
+
+.holdings-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.summary-heading {
+  margin: 0 0 8px;
+  font-size: 0.95rem;
+}
+
+.summary-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.holdings-summary-link {
+  align-self: end;
+}
+
+.recommendation-row.not-evaluated {
+  opacity: 0.85;
+}
+
+.rec-run-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin: 0 0 14px;
+}
+
+.rec-run-meta > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rec-run-meta dt {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.rec-run-meta dd {
+  margin: 0;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.92rem;
+}
+
+.rec-status-row {
+  margin-bottom: 16px;
+}
+
+.rec-score-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 32px;
+  margin-bottom: 12px;
+}
+
+.rec-horizon {
+  margin: 12px 0 0;
+}
+
+.rec-horizon .metric-label {
+  margin-right: 8px;
+}
+
+.rec-subsection-title {
+  margin: 20px 0 8px;
+  font-size: 1rem;
+}
+
+.rec-eval-label {
+  margin: 8px 0 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.evidence-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.evidence-list code {
+  font-size: 0.9rem;
+}
+
+@media (max-width: 960px) {
+  .filter-status {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
 .muted {
   color: var(--muted);
 }
