@@ -63,6 +63,29 @@
     ];
   }
 
+  function glossaryHint(term) {
+    return (window.LewyTrader && window.LewyTrader.glossaryHint)
+      ? window.LewyTrader.glossaryHint(term)
+      : "";
+  }
+
+  function annotateLegendTips(root) {
+    var scope = root || document;
+    scope.querySelectorAll(".apexcharts-legend-series").forEach(function (series) {
+      var text = series.querySelector(".apexcharts-legend-text");
+      if (!text) {
+        return;
+      }
+      var name = (text.textContent || "").trim();
+      var hint = glossaryHint(name);
+      if (!hint) {
+        return;
+      }
+      series.setAttribute("data-tip", hint);
+      series.classList.add("term-hint");
+    });
+  }
+
   function buildToolbar() {
     return (
       '<div class="chart-range-toolbar" role="toolbar" aria-label="Chart time range">' +
@@ -200,7 +223,7 @@
       yaxis: {
         labels: {
           formatter: function (value) {
-            return value == null ? "" : value.toFixed(2);
+            return value == null ? "" : window.LewyTrader.formatMoneyAmount(value);
           },
         },
       },
@@ -211,7 +234,9 @@
         x: { format: "dd MMM yyyy" },
         y: {
           formatter: function (value) {
-            return value == null ? "—" : value.toFixed(2);
+            return value == null
+              ? window.LewyTrader.EMPTY || "—"
+              : window.LewyTrader.formatMoneyAmount(value);
           },
         },
       },
@@ -230,10 +255,15 @@
       },
     });
 
-    chart.render();
+    chart.render().then(function () {
+      annotateLegendTips(chartHost);
+    });
 
     document.addEventListener("lewytrader-theme-change", function () {
       chart.updateOptions(chartThemeOptions(readChartTheme()));
+      window.setTimeout(function () {
+        annotateLegendTips(chartHost);
+      }, 0);
     });
 
     function setActiveButton(rangeId) {
@@ -258,6 +288,9 @@
         xaxis: { min: bounds.min, max: bounds.max },
       });
       setActiveButton(rangeId);
+      window.setTimeout(function () {
+        annotateLegendTips(chartHost);
+      }, 0);
     }
 
     function applyRange(rangeId) {

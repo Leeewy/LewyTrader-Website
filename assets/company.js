@@ -2,13 +2,26 @@
   "use strict";
 
   var reportPromise = null;
+  var EMPTY = window.LewyTrader.EMPTY || "—";
 
   function escapeHtml(value) {
-    return String(value)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
+    return window.LewyTrader.escapeHtml(value);
+  }
+
+  function glossaryMarkup(term) {
+    return window.LewyTrader.glossaryMarkup(term);
+  }
+
+  function badge(text, variant) {
+    return window.LewyTrader.badge(text, variant);
+  }
+
+  function tagList(tags) {
+    return window.LewyTrader.tagList(tags);
+  }
+
+  function metricHtml(label, valueHtml, valueClass) {
+    return window.LewyTrader.metricHtml(label, valueHtml, valueClass);
   }
 
   function normalizeTicker(raw) {
@@ -69,6 +82,8 @@
           run_id: mainList.run_id,
           evaluated_at: mainList.evaluated_at,
           evaluation_state: entries[i].evaluation_state || "not_evaluated",
+          opportunity_score: entries[i].opportunity_score,
+          score: entries[i].score,
           view: entries[i].view || null,
         };
       }
@@ -77,6 +92,8 @@
       run_id: mainList.run_id,
       evaluated_at: mainList.evaluated_at,
       evaluation_state: "not_evaluated",
+      opportunity_score: null,
+      score: null,
       view: null,
     };
   }
@@ -103,6 +120,17 @@
     };
   }
 
+  // Shared UTC stamp from assets/app.js (format_report_timestamp equivalent).
+  function formatUtcTimestamp(iso) {
+    if (window.LewyTrader && window.LewyTrader.formatUtcTimestamp) {
+      return window.LewyTrader.formatUtcTimestamp(iso);
+    }
+    if (!iso) {
+      return EMPTY;
+    }
+    return String(iso);
+  }
+
   function renderRunSelector(report, selectedRunId, latest) {
     var runs = report.recommendation_runs || [];
     if (!runs.length) {
@@ -110,26 +138,29 @@
     }
     var options = runs
       .map(function (run) {
-        var label = (run.evaluated_at || "") + " · " + (run.run_id || "");
-        if (run.run_id === latest || run.is_latest) {
-          label += " (latest)";
-        }
+        var utcLabel = formatUtcTimestamp(run.evaluated_at);
+        var suffix =
+          run.run_id === latest || run.is_latest ? " (latest)" : "";
         var selected = run.run_id === selectedRunId ? " selected" : "";
         return (
           '<option value="' +
           escapeHtml(run.run_id) +
           '"' +
           selected +
-          ">" +
-          escapeHtml(label) +
+          ' data-datetime="' +
+          escapeHtml(run.evaluated_at || "") +
+          '" data-suffix="' +
+          escapeHtml(suffix) +
+          '">' +
+          escapeHtml(utcLabel + suffix) +
           "</option>"
         );
       })
       .join("");
     return (
       '<label class="filter-field filter-field-run rec-run-selector">' +
-      '<span class="filter-label">Evaluation run</span>' +
-      '<select id="company-filter-run" name="run" aria-label="Select evaluation run">' +
+      '<span class="filter-label">AI Review Date</span>' +
+      '<select id="company-filter-run" name="run" aria-label="Choose a review date">' +
       options +
       "</select></label>"
     );
@@ -159,35 +190,74 @@
     );
   }
 
-  function badge(text, variant) {
-    return (
-      '<span class="badge badge-' +
-      escapeHtml(variant) +
-      '">' +
-      escapeHtml(text) +
-      "</span>"
-    );
-  }
-
-  function tagList(tags) {
-    if (!tags.length) {
-      return '<span class="muted">—</span>';
-    }
-    return tags
-      .map(function (tag) {
-        return '<span class="tag">' + escapeHtml(tag) + "</span>";
-      })
-      .join("");
-  }
-
-  function section(title, content) {
-    return (
-      '<section class="section"><h2>' +
+  function section(title, content, headingExtra) {
+    var g = glossaryMarkup(title);
+    var heading =
+      '<div class="section-heading"><h2' +
+      (g.className ? ' class="' + g.className.trim() + '"' : "") +
+      g.tip +
+      ">" +
       escapeHtml(title) +
       "</h2>" +
-      content +
-      "</section>"
+      (headingExtra || "") +
+      "</div>";
+    return '<section class="section">' + heading + content + "</section>";
+  }
+
+  // Shared with recommendations.js via assets/app.js (mirrors formatting.py).
+  function scoreCircle(score, recType, small) {
+    return window.LewyTrader.renderScoreCircle(score, recType, small);
+  }
+
+  function formatOpportunity(value) {
+    return window.LewyTrader.formatScore1dp(value);
+  }
+
+  function aiCell(attractiveness, conviction) {
+    return escapeHtml(window.LewyTrader.formatAiCell(attractiveness, conviction));
+  }
+
+  function recommendationType(recommendation) {
+    var view = recommendation && recommendation.view;
+    return (view && view.type) || "";
+  }
+
+  function metricsBundle(recommendation) {
+    var view = recommendation && recommendation.view;
+    var conviction = (view && view.conviction) || {};
+    var attractiveness = view ? view.attractiveness_score : null;
+    var aiHtml = view ? aiCell(attractiveness, conviction.score) : EMPTY;
+    var researchHtml = escapeHtml(
+      formatOpportunity(recommendation && recommendation.opportunity_score)
     );
+    return {
+      aiHtml: aiHtml,
+      researchHtml: researchHtml,
+      scoreHtml: scoreCircle(
+        recommendation && recommendation.score,
+        recommendationType(recommendation),
+        false
+      ),
+      type: recommendationType(recommendation),
+    };
+  }
+
+  function metricsRow(recommendation) {
+    var metrics = metricsBundle(recommendation);
+    return (
+      '<div class="rec-card-metrics company-metrics">' +
+      metricHtml("AI", metrics.aiHtml) +
+      metricHtml("Research", metrics.researchHtml) +
+      "</div>" +
+      metrics.scoreHtml
+    );
+  }
+
+  function proseBlock(text, emptyMessage) {
+    if (text) {
+      return '<p class="prose">' + escapeHtml(text) + "</p>";
+    }
+    return '<p class="muted">' + escapeHtml(emptyMessage) + "</p>";
   }
 
   function metricGrid(items) {
@@ -198,8 +268,13 @@
       '<div class="metric-grid">' +
       items
         .map(function (item) {
+          var g = glossaryMarkup(item.label);
           return (
-            '<div class="metric-card"><span class="metric-label">' +
+            '<div class="metric-card"><span class="metric-label' +
+            g.className +
+            '"' +
+            g.tip +
+            ">" +
             escapeHtml(item.label) +
             '</span><span class="metric-value">' +
             escapeHtml(item.value) +
@@ -230,19 +305,28 @@
 
   function renderOpportunity(opportunity, isActive) {
     if (!isActive) {
-      return (
-        '<p class="muted">Archived companies are excluded from the ' +
-        "watchlist opportunity ranking.</p>"
-      );
+      return {
+        body:
+          '<p class="muted">Archived companies are not included in the research ' +
+          "ranking.</p>",
+        headingExtra: "",
+      };
     }
     if (!opportunity) {
-      return '<p class="muted">Insufficient data to score this company.</p>';
+      return {
+        body: '<p class="muted">Insufficient data to score this company.</p>',
+        headingExtra: "",
+      };
     }
 
     var factorRows = opportunity.factors
       .map(function (factor) {
+        var g = glossaryMarkup(factor.label);
         return (
-          "<tr><td>" +
+          "<tr><td" +
+          (g.className ? ' class="' + g.className.trim() + '"' : "") +
+          g.tip +
+          ">" +
           escapeHtml(factor.label) +
           "</td><td>" +
           escapeHtml(factor.value) +
@@ -255,25 +339,24 @@
       })
       .join("");
 
-    return (
-      '<div class="score-panel"><div class="score-panel-main">' +
-      '<span class="score-pill large ' +
-      escapeHtml(opportunity.score_class) +
-      '">' +
-      escapeHtml(opportunity.score) +
-      '</span><span class="score-caption">Watchlist opportunity score · rank #' +
-      escapeHtml(opportunity.rank) +
-      "</span></div></div>" +
-      '<div class="strength-risk-grid"><div class="strength-risk-panel"><h3>Strengths</h3>' +
-      factorList(opportunity.strengths, "strength") +
-      '</div><div class="strength-risk-panel"><h3>Risks</h3>' +
-      factorList(opportunity.risks, "risk") +
-      "</div></div>" +
-      '<table class="data-table factor-table"><thead><tr><th>Factor</th><th>Value</th>' +
-      "<th>Score</th><th>Explanation</th></tr></thead><tbody>" +
-      factorRows +
-      "</tbody></table>"
-    );
+    var headingExtra =
+      '<div class="company-section-score">' +
+      metricHtml("latest data", escapeHtml(opportunity.score)) +
+      "</div>";
+
+    return {
+      body:
+        '<div class="strength-risk-grid"><div class="strength-risk-panel"><h3>Strengths</h3>' +
+        factorList(opportunity.strengths, "strength") +
+        '</div><div class="strength-risk-panel"><h3>Risks</h3>' +
+        factorList(opportunity.risks, "risk") +
+        "</div></div>" +
+        '<table class="data-table factor-table"><thead><tr><th>Factor</th><th>Value</th>' +
+        "<th>Score</th><th>Explanation</th></tr></thead><tbody>" +
+        factorRows +
+        "</tbody></table>",
+      headingExtra: headingExtra,
+    };
   }
 
   function proseBlock(text, emptyMessage) {
@@ -289,67 +372,44 @@
     NO_ACTION: "type-no-action",
   };
 
-  // Keep in sync with src/report/recommendation_outcome.py (SoT: docs/web/_MAIN.md).
-  var STATE_LABELS = {
-    accepted: "Accepted",
-    downgraded: "Downgraded",
-    short_circuited: "Short-circuited",
-    failed: "Failed",
-    not_evaluated: "Not evaluated",
-  };
-
-  var STATE_SUMMARIES = {
-    accepted:
-      "Analyst proposal survived validation; recommendation type and levels " +
-      "are unchanged.",
-    downgraded:
-      "Validation forced NO_ACTION and cleared actionable levels; the AI " +
-      "narrative and scores are kept for review.",
-    short_circuited:
-      "Investment Snapshot could not be produced for this ticker, so the " +
-      "analyst was never invoked. Result is deterministic NO_ACTION with " +
-      "null attractiveness.",
-    failed:
-      "The AI Investment Analyst failed after retries (provider or parse). " +
-      "Result is deterministic NO_ACTION with null attractiveness.",
-    not_evaluated: "This company was not evaluated in the selected run.",
-  };
-
-  var ANALYSIS_NOT_RUN_STATES = {
-    short_circuited: true,
-    failed: true,
-  };
-
-  function scoreClass(score) {
-    if (typeof score !== "number") {
-      return "";
-    }
-    if (score >= 70) {
-      return "score-high";
-    }
-    if (score >= 50) {
-      return "score-mid";
-    }
-    return "score-low";
+  // Labels/summaries are inlined from src/report/recommendation_outcome.py as
+  // window.LewyTrader.evaluationStateLabels / evaluationStateSummaries.
+  function evaluationStateLabels() {
+    return (window.LewyTrader && window.LewyTrader.evaluationStateLabels) || {};
   }
 
-  function formatScore(score) {
-    if (typeof score !== "number") {
-      return "—";
+  function evaluationStateSummaries() {
+    return (window.LewyTrader && window.LewyTrader.evaluationStateSummaries) || {};
+  }
+
+  function evaluationStateLabel(state) {
+    var labels = evaluationStateLabels();
+    if (labels[state]) {
+      return labels[state];
     }
-    return String(score);
+    return String(state || "").replace(/_/g, " ");
   }
 
   function formatHorizon(horizon) {
-    if (!horizon || horizon.value === null || horizon.value === undefined || !horizon.unit) {
-      return "—";
-    }
-    return String(horizon.value) + " " + String(horizon.unit);
+    return window.LewyTrader.formatHorizon(horizon);
   }
 
-  function formatEvidenceRef(item) {
+  // Labels are inlined from src/report/evidence_labels.py as
+  // window.LewyTrader.snapshotEvidenceLabels / mirFindingLabel.
+  function snapshotEvidenceLabels() {
+    return (window.LewyTrader && window.LewyTrader.snapshotEvidenceLabels) || {};
+  }
+
+  function mirFindingLabel() {
+    return (
+      (window.LewyTrader && window.LewyTrader.mirFindingLabel) ||
+      "Market intelligence finding"
+    );
+  }
+
+  function machineEvidenceRef(item) {
     if (!item || typeof item !== "object") {
-      return null;
+      return "";
     }
     if (item.type === "mir_finding" && item.id) {
       return "mir_finding:" + item.id;
@@ -357,23 +417,20 @@
     if (item.type === "snapshot" && item.path) {
       return "snapshot:" + item.path;
     }
-    return null;
+    return "";
   }
 
-  function runMeta(recommendation) {
-    return (
-      '<dl class="rec-run-meta">' +
-      "<div><dt>Run</dt><dd>" +
-      escapeHtml(recommendation.run_id || "—") +
-      "</dd></div>" +
-      "<div><dt>Evaluated</dt><dd>" +
-      '<time datetime="' +
-      escapeHtml(recommendation.evaluated_at || "") +
-      '">' +
-      escapeHtml(recommendation.evaluated_at || "—") +
-      "</time></dd></div>" +
-      "</dl>"
-    );
+  function formatEvidenceRef(item) {
+    if (!item || typeof item !== "object") {
+      return null;
+    }
+    if (item.type === "mir_finding" && item.id) {
+      return mirFindingLabel();
+    }
+    if (item.type === "snapshot" && item.path) {
+      return snapshotEvidenceLabels()[item.path] || item.path;
+    }
+    return null;
   }
 
   function renderLevels(levels, currency) {
@@ -386,22 +443,21 @@
       items.push({
         label: "Entry range",
         value:
-          String(entry.low) +
+          window.LewyTrader.formatMoneyAmount(entry.low, currency) +
           " – " +
-          String(entry.high) +
-          (currency ? " " + currency : ""),
+          window.LewyTrader.formatMoneyAmount(entry.high, currency),
       });
     }
     if (levels.stop_loss !== undefined && levels.stop_loss !== null) {
       items.push({
         label: "Stop loss",
-        value: String(levels.stop_loss) + (currency ? " " + currency : ""),
+        value: window.LewyTrader.formatMoneyAmount(levels.stop_loss, currency),
       });
     }
     if (levels.take_profit !== undefined && levels.take_profit !== null) {
       items.push({
         label: "Take profit",
-        value: String(levels.take_profit) + (currency ? " " + currency : ""),
+        value: window.LewyTrader.formatMoneyAmount(levels.take_profit, currency),
       });
     }
     if (!items.length) {
@@ -411,31 +467,41 @@
   }
 
   function renderEvidence(evidence) {
-    var refs = (evidence || [])
-      .map(formatEvidenceRef)
-      .filter(function (ref) {
-        return ref;
-      });
-    if (!refs.length) {
+    var items = (evidence || []).filter(function (item) {
+      return formatEvidenceRef(item);
+    });
+    if (!items.length) {
       return (
         '<h3 class="rec-subsection-title">Evidence</h3>' +
-        '<p class="muted">No deterministic evidence references.</p>'
+        '<p class="muted">No supporting evidence recorded.</p>'
       );
     }
     return (
       '<h3 class="rec-subsection-title">Evidence</h3>' +
-      '<ul class="evidence-list">' +
-      refs
-        .map(function (ref) {
-          return "<li><code>" + escapeHtml(ref) + "</code></li>";
+      '<div class="tag-row">' +
+      items
+        .map(function (item) {
+          var label = formatEvidenceRef(item);
+          var machine = machineEvidenceRef(item);
+          var g = glossaryMarkup(label);
+          var tip = g.tip || (machine ? ' data-tip="' + escapeHtml(machine) + '"' : "");
+          return (
+            '<span class="tag term-hint"' +
+            tip +
+            ' data-evidence-ref="' +
+            escapeHtml(machine) +
+            '">' +
+            escapeHtml(label) +
+            "</span>"
+          );
         })
         .join("") +
-      "</ul>"
+      "</div>"
     );
   }
 
   function renderOutcomeCallout(state) {
-    var summary = STATE_SUMMARIES[state];
+    var summary = evaluationStateSummaries()[state];
     if (!summary) {
       return "";
     }
@@ -446,7 +512,7 @@
       escapeHtml(state) +
       '" role="status">' +
       '<p class="rec-outcome-title">' +
-      escapeHtml(STATE_LABELS[state] || state) +
+      escapeHtml(evaluationStateLabel(state)) +
       "</p>" +
       '<p class="rec-outcome-summary">' +
       escapeHtml(summary) +
@@ -490,33 +556,60 @@
     return parts.join("");
   }
 
-  function renderScorePanel(attractiveness, conviction) {
+  function scoreField(valueHtml) {
+    var g = glossaryMarkup("Score (Convince)");
     return (
-      '<div class="score-panel rec-score-panel">' +
-      '<div class="score-panel-main">' +
-      '<span class="score-pill large ' +
-      escapeHtml(scoreClass(attractiveness)) +
-      '">' +
-      escapeHtml(formatScore(attractiveness)) +
-      '</span><span class="score-caption">Attractiveness</span></div>' +
-      '<div class="score-panel-main">' +
-      '<span class="score-pill large ' +
-      escapeHtml(scoreClass(conviction.score)) +
-      '">' +
-      escapeHtml(formatScore(conviction.score)) +
-      '</span><span class="score-caption">Conviction</span></div></div>'
+      '<div class="filter-field filter-field-score">' +
+      '<span class="filter-label' +
+      g.className +
+      '"' +
+      g.tip +
+      ">Score (Convince)</span>" +
+      '<span class="score-value">' +
+      valueHtml +
+      "</span></div>"
+    );
+  }
+
+  function horizonField(horizon) {
+    var g = glossaryMarkup("Horizon");
+    return (
+      '<div class="filter-field filter-field-horizon">' +
+      '<span class="filter-label' +
+      g.className +
+      '"' +
+      g.tip +
+      ">Horizon</span>" +
+      '<span class="horizon-value">' +
+      escapeHtml(formatHorizon(horizon)) +
+      "</span></div>"
+    );
+  }
+
+  function renderAnalysisToolbar(recommendation, runSelectorHtml, horizonHtml) {
+    var metrics = metricsBundle(recommendation);
+    return (
+      '<div class="company-analysis-toolbar">' +
+      "<h2>" +
+      "AI Analysis" +
+      "</h2>" +
+      scoreField(metrics.aiHtml) +
+      (horizonHtml || "") +
+      (runSelectorHtml || "") +
+      "</div>"
     );
   }
 
   function renderAnalyzedBody(view, currency) {
     var conviction = view.conviction || {};
-    var horizon = view.horizon || {};
+    var snapshotHint = glossaryMarkup("Snapshot");
     return (
-      renderScorePanel(view.attractiveness_score, conviction) +
-      proseBlock(conviction.explanation, "No conviction explanation.") +
-      '<p class="rec-horizon"><span class="metric-label">Horizon</span> ' +
-      escapeHtml(formatHorizon(horizon)) +
-      "</p>" +
+      '<h3 class="rec-subsection-title' +
+      snapshotHint.className +
+      '"' +
+      snapshotHint.tip +
+      ">Snapshot</h3>" +
+      proseBlock(conviction.explanation, "No snapshot recorded.") +
       '<h3 class="rec-subsection-title">Rationale</h3>' +
       proseBlock(view.rationale, "No rationale recorded.") +
       '<h3 class="rec-subsection-title">Investment thesis</h3>' +
@@ -532,9 +625,7 @@
   }
 
   function renderAnalysisNotRunBody(view) {
-    var conviction = view.conviction || {};
     return (
-      renderScorePanel(view.attractiveness_score, conviction) +
       '<p class="muted rec-null-attractiveness">Attractiveness is null because ' +
       "analysis did not run for this ticker.</p>" +
       '<h3 class="rec-subsection-title">Rationale</h3>' +
@@ -545,23 +636,30 @@
   }
 
   function renderRecommendation(recommendation, runSelectorHtml) {
-    var selector = runSelectorHtml || "";
     if (!recommendation) {
       return (
-        selector +
+        renderAnalysisToolbar(null, runSelectorHtml, "") +
         '<p class="muted">No completed evaluation run is available yet. ' +
         "Generate recommendations, then refresh this website.</p>"
       );
     }
 
     var state = recommendation.evaluation_state || "not_evaluated";
-    var stateLabel = STATE_LABELS[state] || state.replace(/_/g, " ");
+    var stateLabel = evaluationStateLabel(state);
     var view = recommendation.view;
+    var horizonHtml = "";
+    if (view && view.horizon && !window.LewyTrader.isAnalysisNotRunState(state)) {
+      horizonHtml = horizonField(view.horizon);
+    }
+    var toolbar = renderAnalysisToolbar(
+      recommendation,
+      runSelectorHtml,
+      horizonHtml
+    );
 
     if (!view) {
       return (
-        selector +
-        runMeta(recommendation) +
+        toolbar +
         '<div class="badge-row rec-status-row">' +
         '<span class="state-pill state-' +
         escapeHtml(state) +
@@ -572,27 +670,97 @@
       );
     }
 
-    var recType = view.type || "—";
+    var recType = view.type || EMPTY;
     var typeVariant = TYPE_BADGE[recType] || "type-none";
     var evaluation = view.evaluation || {};
     var currency = view.instrument_currency || "";
-    var body = ANALYSIS_NOT_RUN_STATES[state]
+    var body = window.LewyTrader.isAnalysisNotRunState(state)
       ? renderAnalysisNotRunBody(view)
       : renderAnalyzedBody(view, currency);
 
+    // Accepted calls are already conveyed by the score ring colour; keep
+    // badges and callouts for degraded / incomplete states only.
+    var statusRow = "";
+    if (state !== "accepted") {
+      statusRow =
+        '<div class="badge-row rec-status-row">' +
+        badge(recType, typeVariant) +
+        '<span class="state-pill state-' +
+        escapeHtml(state) +
+        '">' +
+        escapeHtml(stateLabel) +
+        "</span></div>" +
+        renderOutcomeCallout(state);
+    }
+
     return (
-      selector +
-      runMeta(recommendation) +
-      '<div class="badge-row rec-status-row">' +
-      badge(recType, typeVariant) +
-      '<span class="state-pill state-' +
-      escapeHtml(state) +
-      '">' +
-      escapeHtml(stateLabel) +
-      "</span></div>" +
-      renderOutcomeCallout(state) +
+      toolbar +
+      statusRow +
       body +
       renderEvaluationNotes(evaluation)
+    );
+  }
+
+  function heroVariant(recommendation) {
+    var type = recommendationType(recommendation);
+    if (type === "BUY") {
+      return "buy";
+    }
+    if (type === "SELL") {
+      return "sell";
+    }
+    return "neutral";
+  }
+
+  function renderCompanyHero(view, recommendation) {
+    var badges = view.status_badges
+      .map(function (entry) {
+        return badge(entry.text, entry.variant);
+      })
+      .join("");
+    var tags = view.tags && view.tags.length ? tagList(view.tags) : "";
+    // Review date lives in the AI Analysis filter; keep the hero to identity + metrics.
+    var titleMeta = view.price_display
+      ? '<span class="company-price">' + escapeHtml(view.price_display) + "</span>"
+      : "";
+
+    var chartDisclosure = view.has_chart
+      ? '<details class="company-chart-disclosure">' +
+        '<summary class="company-chart-toggle">' +
+        '<span class="company-chart-chevron" aria-hidden="true"></span>' +
+        "<span>Price Chart</span></summary>" +
+        '<div class="company-chart-body">' +
+        '<div class="chart-panel" id="price-chart-panel" aria-label="Historical price chart for ' +
+        escapeHtml(view.ticker) +
+        '"></div></div></details>'
+      : "";
+
+    return (
+      '<div id="company-hero-root" class="company-hero company-hero-' +
+      heroVariant(recommendation) +
+      '"><div class="company-hero-body">' +
+      '<div class="company-hero-identity">' +
+      '<p class="company-title-line">' +
+      '<span class="company-ticker">' +
+      escapeHtml(view.ticker) +
+      "</span> " +
+      '<span class="company-name">' +
+      escapeHtml(view.name) +
+      "</span>" +
+      (titleMeta ? '<span class="company-title-meta">' + titleMeta + "</span>" : "") +
+      "</p>" +
+      (badges || tags
+        ? '<div class="badge-row company-hero-tags">' +
+          badges +
+          (badges && tags ? " " : "") +
+          tags +
+          "</div>"
+        : "") +
+      '</div><div class="company-hero-metrics">' +
+      metricsRow(recommendation) +
+      "</div></div>" +
+      chartDisclosure +
+      "</div>"
     );
   }
 
@@ -604,49 +772,21 @@
     var selectorHtml = renderRunSelector(report, runId, latest);
     writeRunParam(runId, latest);
 
-    var badges = view.status_badges
-      .map(function (entry) {
-        return badge(entry.text, entry.variant);
-      })
-      .join("");
-
-    var chartSection = view.has_chart
-      ? '<div class="chart-panel" id="price-chart-panel" aria-label="Historical price chart for ' +
-        escapeHtml(view.ticker) +
-        '"></div>'
-      : '<p class="muted">No historical price data available for charting.</p>';
+    var opportunity = renderOpportunity(view.opportunity, view.is_active);
 
     return (
-      '<div class="page-header company-header"><div>' +
+      '<div class="page-header company-header">' +
       '<p class="eyebrow"><a id="company-back-link" href="' +
       escapeHtml(indexHref(runId, latest)) +
-      '">Latest Recommendations</a></p>' +
-      "<h1>" +
-      escapeHtml(view.ticker) +
-      "</h1>" +
-      '<p class="company-title">' +
-      escapeHtml(view.name) +
-      "</p>" +
-      '<div class="badge-row">' +
-      badges +
-      " " +
-      tagList(view.tags) +
-      "</div>" +
-      '<p class="lede">' +
-      escapeHtml(view.summary_line) +
-      "</p></div></div>" +
-      section(
-        "Recommendation",
-        '<div id="company-recommendation-root">' +
-          renderRecommendation(recommendation, selectorHtml) +
-          "</div>"
-      ) +
-      section("Watchlist opportunity score", renderOpportunity(view.opportunity, view.is_active)) +
-      section("Watchlist thesis", proseBlock(view.thesis, "No watchlist thesis recorded.")) +
-      section("Notes", proseBlock(view.notes, "No notes recorded.")) +
-      section("Key fundamentals", metricGrid(view.fundamentals)) +
-      section("Technical indicators", metricGrid(view.indicators)) +
-      section("Price history", chartSection)
+      '">&lt; AI Recommendations</a></p></div>' +
+      renderCompanyHero(view, recommendation) +
+      '<section class="section company-ai-section">' +
+      '<div id="company-recommendation-root">' +
+      renderRecommendation(recommendation, selectorHtml) +
+      "</div></section>" +
+      section("Static Research", opportunity.body, opportunity.headingExtra) +
+      section("Fundamentals", metricGrid(view.fundamentals)) +
+      section("Technical Indicators", metricGrid(view.indicators))
     );
   }
 
@@ -667,10 +807,63 @@
           "Company not found",
           '<p class="muted">' +
             escapeHtml(message) +
-            '</p><p><a href="index.html">Return to Latest Recommendations</a></p>'
+            '</p><p><a href="index.html">Return to AI Recommendations</a></p>'
         );
     }
     document.title = "Company not found · LewyTrader";
+  }
+
+  // Timestamps are injected after app.js ran, so re-apply local formatting.
+  function applyLocalTimestamps(scope) {
+    if (!scope) {
+      return;
+    }
+    if (window.LewyTrader.formatUtcDateTimes) {
+      window.LewyTrader.formatUtcDateTimes(scope);
+    }
+    if (window.LewyTrader.formatUtcOptionDates) {
+      window.LewyTrader.formatUtcOptionDates(scope);
+    }
+  }
+
+  function initPriceChartPanel(ticker, chartPanel) {
+    if (!chartPanel || chartPanel.getAttribute("data-chart-ready") === "true") {
+      return;
+    }
+    if (!window.LewyTrader || !window.LewyTrader.initPriceChart) {
+      chartPanel.innerHTML =
+        '<p class="muted">Chart controls are unavailable in this build.</p>';
+      return;
+    }
+    chartPanel.setAttribute("data-chart-ready", "pending");
+    chartPanel.innerHTML = '<p class="muted">Loading chart…</p>';
+    loadShortChart(ticker)
+      .then(function (chartData) {
+        chartPanel.innerHTML = "";
+        window.LewyTrader.initPriceChart(chartPanel, chartData, ticker);
+        chartPanel.setAttribute("data-chart-ready", "true");
+      })
+      .catch(function () {
+        chartPanel.setAttribute("data-chart-ready", "error");
+        chartPanel.innerHTML =
+          '<p class="muted">Unable to load historical price data for charting.</p>';
+      });
+  }
+
+  function bindPriceChartDisclosure(ticker) {
+    var disclosure = document.querySelector(
+      "#company-hero-root .company-chart-disclosure"
+    );
+    if (!disclosure || disclosure.getAttribute("data-bound") === "true") {
+      return;
+    }
+    disclosure.setAttribute("data-bound", "true");
+    disclosure.addEventListener("toggle", function () {
+      if (!disclosure.open) {
+        return;
+      }
+      initPriceChartPanel(ticker, document.getElementById("price-chart-panel"));
+    });
   }
 
   function bindCompanyRunSelector(report, view) {
@@ -680,6 +873,7 @@
     }
     select.addEventListener("change", function () {
       var root = document.getElementById("company-recommendation-root");
+      var hero = document.getElementById("company-hero-root");
       var back = document.getElementById("company-back-link");
       var resolved = resolveRecommendation(report, view.ticker, select.value);
       var selectorHtml = renderRunSelector(
@@ -688,11 +882,17 @@
         resolved.latestRunId
       );
       writeRunParam(resolved.runId, resolved.latestRunId);
+      if (hero) {
+        hero.outerHTML = renderCompanyHero(view, resolved.recommendation);
+        applyLocalTimestamps(document.getElementById("company-hero-root"));
+        bindPriceChartDisclosure(view.ticker);
+      }
       if (root) {
         root.innerHTML = renderRecommendation(
           resolved.recommendation,
           selectorHtml
         );
+        applyLocalTimestamps(root);
         bindCompanyRunSelector(report, view);
       }
       if (back) {
@@ -712,7 +912,7 @@
 
     var ticker = readTicker();
     if (!ticker) {
-      showError("No ticker was provided. Open a company from Latest Recommendations.");
+      showError("No ticker was provided. Open a company from AI Recommendations.");
       return;
     }
 
@@ -739,21 +939,9 @@
         if (content) {
           content.classList.remove("hidden");
           content.innerHTML = renderCompany(view, report, requestedRun);
+          applyLocalTimestamps(content);
           bindCompanyRunSelector(report, view);
-        }
-
-        if (view.has_chart && window.LewyTrader.initPriceChart) {
-          var chartPanel = document.getElementById("price-chart-panel");
-          if (chartPanel) {
-            loadShortChart(ticker)
-              .then(function (chartData) {
-                window.LewyTrader.initPriceChart(chartPanel, chartData, ticker);
-              })
-              .catch(function () {
-                chartPanel.innerHTML =
-                  '<p class="muted">Unable to load historical price data for charting.</p>';
-              });
-          }
+          bindPriceChartDisclosure(view.ticker);
         }
       })
       .catch(function () {

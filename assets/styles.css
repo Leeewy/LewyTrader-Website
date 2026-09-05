@@ -9,16 +9,16 @@
   --border: #d8dee6;
   --brand: #0f4c81;
   --brand-soft: #e8f1fa;
-  --owned: #1f7a4d;
-  --owned-soft: #e7f6ee;
+  --positive: #1f7a4d;
+  --positive-soft: #e7f6ee;
   --watchlist: #6b4c9a;
   --watchlist-soft: #f1ebfa;
   --score-high: #1f7a4d;
-  --score-mid: #b26a00;
+  --score-mid: #5f6b7a;
   --score-low: #9a3b3b;
   --score-pill-bg: #eef2f6;
   --score-high-bg: #e7f6ee;
-  --score-mid-bg: #fff4df;
+  --score-mid-bg: #eef2f6;
   --score-low-bg: #fdeeee;
   --alert-warning: #fff7e6;
   --alert-error: #fdecec;
@@ -46,16 +46,16 @@
   --border: #2d3a4d;
   --brand: #5ba4e8;
   --brand-soft: #1a2d44;
-  --owned: #4ecf8a;
-  --owned-soft: #1a3d2e;
+  --positive: #4ecf8a;
+  --positive-soft: #1a3d2e;
   --watchlist: #b89ae8;
   --watchlist-soft: #2a2440;
   --score-high: #4ecf8a;
-  --score-mid: #e8a040;
+  --score-mid: #8b9cb0;
   --score-low: #f08080;
   --score-pill-bg: #2d3a4d;
   --score-high-bg: #1a3d2e;
-  --score-mid-bg: #3d3020;
+  --score-mid-bg: #243040;
   --score-low-bg: #3d2424;
   --alert-warning: #3d3020;
   --alert-error: #3d2424;
@@ -221,7 +221,7 @@ html[data-theme="dark"] .theme-toggle-moon {
 .page-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 24px;
   margin-bottom: 24px;
 }
@@ -231,19 +231,275 @@ html[data-theme="dark"] .theme-toggle-moon {
 }
 
 .page-header-meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
   text-align: right;
   min-width: 220px;
   flex-shrink: 0;
 }
 
-.meta-block + .meta-block {
-  margin-top: 10px;
+.meta-block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.35em;
+  margin: 0;
+}
+
+.meta-block .meta-label {
+  display: inline;
+}
+
+.meta-block .meta-label::after {
+  content: ":";
 }
 
 .page-header h1,
 .company-header h1 {
   margin: 0 0 8px;
   font-size: clamp(1.8rem, 2vw, 2.4rem);
+}
+
+.company-header {
+  margin-bottom: 12px;
+}
+
+.company-hero {
+  margin-bottom: 20px;
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.company-hero-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.company-hero-identity {
+  min-width: 0;
+  flex: 1;
+}
+
+.company-title-line {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 0 0 8px;
+  font-size: clamp(1.6rem, 2vw, 2.1rem);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.company-ticker {
+  color: var(--brand);
+}
+
+.company-title-line .company-name {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.company-title-meta {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-left: 4px;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.company-title-meta .company-price {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.company-title-meta .rec-card-metric .metric-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.company-title-meta .rec-card-metric-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.company-hero-tags {
+  margin-bottom: 0;
+}
+
+.company-chart-disclosure {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.company-chart-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  list-style: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1;
+  user-select: none;
+}
+
+.company-chart-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.company-chart-toggle::marker {
+  content: "";
+}
+
+.company-chart-toggle:hover {
+  color: var(--text);
+}
+
+.company-chart-chevron {
+  display: block;
+  width: 0.5em;
+  height: 0.5em;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(45deg);
+  translate: 0 -0.12em;
+  transition: transform 0.15s ease;
+  flex: 0 0 auto;
+}
+
+.company-chart-disclosure[open] > .company-chart-toggle .company-chart-chevron {
+  transform: rotate(-135deg);
+}
+
+.company-chart-body {
+  margin-top: 14px;
+}
+
+.company-hero-metrics {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.company-metrics {
+  justify-content: flex-end;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.section-heading h2 {
+  margin: 0;
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+
+.company-analysis-toolbar {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 16px 20px;
+  margin-bottom: 18px;
+}
+
+.company-analysis-toolbar > h2 {
+  margin: 0;
+  font-size: 1.45rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.company-analysis-toolbar .filter-field-horizon,
+.company-analysis-toolbar .filter-field-score,
+.company-analysis-toolbar .rec-run-selector {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  max-width: none;
+  flex: 0 0 auto;
+}
+
+.company-analysis-toolbar .filter-field-run {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.company-analysis-toolbar .filter-label {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.company-analysis-toolbar .horizon-value,
+.company-analysis-toolbar .score-value {
+  display: inline;
+  padding: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.company-analysis-toolbar .filter-field select {
+  min-width: 12rem;
+}
+
+.company-section-score {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.company-section-score .rec-card-metric {
+  align-items: baseline;
+  gap: 8px;
+}
+
+.company-section-score .rec-card-metric-value {
+  font-size: 1.55rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.company-section-score .metric-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 720px) {
+  .company-analysis-toolbar {
+    flex-wrap: wrap;
+  }
 }
 
 .lede,
@@ -261,6 +517,25 @@ html[data-theme="dark"] .theme-toggle-moon {
 .eyebrow {
   margin: 0 0 8px;
   font-size: 0.9rem;
+}
+
+.term-hint {
+  cursor: help;
+}
+
+.lt-tooltip {
+  position: absolute;
+  z-index: 1000;
+  max-width: min(28rem, calc(100vw - 16px));
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  font-size: 0.85rem;
+  line-height: 1.35;
+  pointer-events: none;
 }
 
 .meta-label,
@@ -286,9 +561,10 @@ html[data-theme="dark"] .theme-toggle-moon {
   margin-bottom: 20px;
 }
 
-.section h2 {
+.section > h2 {
   margin: 0 0 16px;
-  font-size: 1.15rem;
+  font-size: 1.45rem;
+  line-height: 1.2;
 }
 
 .data-table {
@@ -383,11 +659,6 @@ html[data-theme="dark"] .theme-toggle-moon {
   font-weight: 600;
 }
 
-.badge-owned {
-  color: var(--owned);
-  background: var(--owned-soft);
-}
-
 .badge-watchlist,
 .badge-active {
   color: var(--watchlist);
@@ -404,6 +675,7 @@ html[data-theme="dark"] .theme-toggle-moon {
   color: var(--brand);
   background: var(--brand-soft);
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .alert {
@@ -575,13 +847,13 @@ html[data-theme="dark"] .theme-toggle-moon {
 }
 
 .prose {
-  margin: 0;
+  margin: 0 0 4px;
   white-space: pre-wrap;
 }
 
 .badge-type-buy {
-  color: var(--owned);
-  background: var(--owned-soft);
+  color: var(--positive);
+  background: var(--positive-soft);
 }
 
 .badge-type-sell {
@@ -607,8 +879,8 @@ html[data-theme="dark"] .theme-toggle-moon {
 }
 
 .state-pill.state-accepted {
-  color: var(--owned);
-  background: var(--owned-soft);
+  color: var(--positive);
+  background: var(--positive-soft);
 }
 
 .state-pill.state-downgraded {
@@ -632,10 +904,6 @@ html[data-theme="dark"] .theme-toggle-moon {
   background: var(--score-pill-bg);
 }
 
-.recommendation-row.outcome-degraded td:last-child {
-  font-weight: 600;
-}
-
 .recommendation-row.outcome-failed {
   background: color-mix(in srgb, var(--score-low-bg) 35%, transparent);
 }
@@ -648,6 +916,37 @@ html[data-theme="dark"] .theme-toggle-moon {
   background: color-mix(in srgb, var(--score-mid-bg) 40%, transparent);
 }
 
+/* Buy/sell/no-action surface tint: company hero + whole recommendation panels. */
+.company-hero-buy,
+.rec-group[data-group="BUY"] {
+  border-color: color-mix(in srgb, var(--score-high) 45%, var(--border));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--score-high) 12%, var(--surface)) 0%,
+    var(--surface) 55%
+  );
+}
+
+.company-hero-sell,
+.rec-group[data-group="SELL"] {
+  border-color: color-mix(in srgb, var(--score-low) 45%, var(--border));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--score-low) 12%, var(--surface)) 0%,
+    var(--surface) 55%
+  );
+}
+
+.company-hero-neutral,
+.rec-group[data-group="NO_ACTION"] {
+  border-color: color-mix(in srgb, var(--muted) 35%, var(--border));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--muted) 10%, var(--surface)) 0%,
+    var(--surface) 55%
+  );
+}
+
 .rec-outcome-callout {
   margin: 0 0 16px;
   padding: 12px 14px;
@@ -657,8 +956,8 @@ html[data-theme="dark"] .theme-toggle-moon {
 }
 
 .rec-outcome-callout.outcome-accepted {
-  border-color: color-mix(in srgb, var(--owned) 35%, var(--border));
-  background: var(--owned-soft);
+  border-color: color-mix(in srgb, var(--positive) 35%, var(--border));
+  background: var(--positive-soft);
 }
 
 .rec-outcome-callout.outcome-downgraded {
@@ -711,23 +1010,26 @@ html[data-theme="dark"] .theme-toggle-moon {
 }
 
 .filter-section {
-  padding-bottom: 0;
+  padding-top: 16px;
+  padding-bottom: 16px;
 }
 
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
   gap: 12px 16px;
-  align-items: end;
-  padding: 14px 16px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .filter-field {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   gap: 6px;
   min-width: 140px;
 }
@@ -757,44 +1059,270 @@ html[data-theme="dark"] .theme-toggle-moon {
 .filter-field input {
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: var(--surface-muted);
+  background-color: var(--surface-muted);
   color: var(--text);
   padding: 8px 10px;
   font: inherit;
 }
 
-.filter-status {
-  margin: 0 0 2px auto;
-  font-size: 0.9rem;
+.filter-field select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.25rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1.5 1.75 6 6.25 10.5 1.75' stroke='%235f6b7a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 8px;
 }
 
-.holdings-summary-grid {
+[data-theme="dark"] .filter-field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1.5 1.75 6 6.25 10.5 1.75' stroke='%238b9cb0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+
+.recommendation-row.not-evaluated {
+  opacity: 0.85;
+}
+
+/* Buy and sell are equally important decisions, so they share one row of
+   equal-width panels. No action sits below at full width. */
+.rec-split-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  align-items: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
 }
 
-.summary-heading {
-  margin: 0 0 8px;
-  font-size: 0.95rem;
-}
-
-.summary-chip-list {
+.rec-group h2 {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 14px;
+  align-items: center;
+  gap: 8px;
+}
+
+.rec-group-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 26px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--score-pill-bg);
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.rec-group-note {
+  margin: 0;
+  font-size: 0.92rem;
+}
+
+.rec-card-list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.holdings-summary-link {
-  align-self: end;
+/* Company + tags on the left; AI · Research · Score centred against that stack. */
+.rec-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
 }
 
-.recommendation-row.not-evaluated {
-  opacity: 0.85;
+.rec-card:first-child {
+  padding-top: 0;
+}
+
+.rec-card:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.rec-card-row {
+  display: flex;
+  align-items: center;
+  gap: 12px 16px;
+  min-width: 0;
+}
+
+.rec-card-company {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+a.rec-card-company {
+  color: inherit;
+  text-decoration: none;
+  transform-origin: left center;
+  transition: transform 0.15s ease;
+}
+
+a.rec-card-company:hover {
+  text-decoration: none;
+  transform: scale(1.04);
+}
+
+.rec-card-identity {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.rec-card-aside {
+  --stack-gap: 4px;
+  --metric-line: 1.2;
+  --metric-value-size: 0.92rem;
+  --stack-height: calc(
+    2 * var(--metric-value-size) * var(--metric-line) + var(--stack-gap)
+  );
+  --circle-size: calc(var(--stack-height) * 1.25);
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.rec-card-metrics {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: var(--stack-gap, 4px);
+  min-width: 0;
+}
+
+.rec-card-metrics .rec-card-metric {
+  line-height: var(--metric-line, 1.2);
+}
+
+.rec-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+.rec-card-tags .tag {
+  white-space: nowrap;
+}
+
+.rec-card-company .company-ticker {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.rec-card-company .company-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.rec-card-company .company-price {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.rec-card-metric {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.rec-card-metric .metric-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rec-card-metric-value {
+  font-size: var(--metric-value-size, 0.92rem);
+  font-weight: 600;
+}
+
+/* Ring colour tracks the recommendation call (same language as hero / panels). */
+.score-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 74px;
+  height: 74px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.score-circle-buy {
+  border-color: var(--score-high);
+  color: var(--score-high);
+}
+
+.score-circle-sell {
+  border-color: var(--score-low);
+  color: var(--score-low);
+}
+
+.score-circle-none {
+  border-color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  color: var(--muted);
+}
+
+.score-circle-sm {
+  width: 38px;
+  height: 38px;
+  font-size: 0.82rem;
+  border-width: 1.5px;
+}
+
+.rec-card-aside .score-circle {
+  width: var(--circle-size);
+  height: var(--circle-size);
+  font-size: 0.95rem;
+}
+
+/* Rows are single-line here, so centre them against the taller score circle. */
+.ranking-table td {
+  vertical-align: middle;
+}
+
+/* Match Buy/Sell cards: company line flush with the section heading, score flush right. */
+.ranking-table th:first-child,
+.ranking-table td:first-child {
+  padding-left: 0;
+}
+
+.ranking-table th:last-child,
+.ranking-table td:last-child {
+  padding-right: 0;
+}
+
+.ranking-table th:nth-child(n + 3),
+.ranking-table td:nth-child(n + 3) {
+  text-align: center;
+}
+
+.ranking-table .tag-row {
+  margin-top: 0;
 }
 
 .rec-run-meta {
@@ -845,8 +1373,12 @@ html[data-theme="dark"] .theme-toggle-moon {
 }
 
 .rec-subsection-title {
-  margin: 20px 0 8px;
+  margin: 28px 0 10px;
   font-size: 1rem;
+}
+
+.rec-subsection-title:first-child {
+  margin-top: 8px;
 }
 
 .rec-eval-label {
@@ -854,22 +1386,6 @@ html[data-theme="dark"] .theme-toggle-moon {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--muted);
-}
-
-.evidence-list {
-  margin: 0;
-  padding-left: 18px;
-}
-
-.evidence-list code {
-  font-size: 0.9rem;
-}
-
-@media (max-width: 960px) {
-  .filter-status {
-    margin-left: 0;
-    width: 100%;
-  }
 }
 
 .muted {
@@ -895,7 +1411,7 @@ html[data-theme="dark"] .theme-toggle-moon {
 }
 
 .factor-list-strength li {
-  color: var(--owned);
+  color: var(--positive);
 }
 
 .factor-list-risk li {
@@ -906,7 +1422,8 @@ html[data-theme="dark"] .theme-toggle-moon {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
-  margin-bottom: 16px;
+  margin-top: 28px;
+  margin-bottom: 28px;
 }
 
 .strength-risk-panel {
@@ -937,7 +1454,8 @@ html[data-theme="dark"] .theme-toggle-moon {
 }
 
 @media (max-width: 960px) {
-  .strength-risk-grid {
+  .strength-risk-grid,
+  .rec-split-grid {
     grid-template-columns: 1fr;
   }
 
@@ -954,10 +1472,26 @@ html[data-theme="dark"] .theme-toggle-moon {
 
   .page-header {
     flex-direction: column;
+    align-items: stretch;
   }
 
   .page-header-meta {
     text-align: left;
     min-width: 0;
+  }
+
+  .meta-block {
+    justify-content: flex-start;
+  }
+
+  .company-hero-body {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .company-hero-metrics,
+  .company-metrics {
+    width: 100%;
+    justify-content: center;
   }
 }

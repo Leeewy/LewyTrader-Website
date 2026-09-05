@@ -1,9 +1,8 @@
 # Third-party notices
 
 JavaScript libraries vendored in `src/report/assets/` are copied to
-`web-private/assets/` or `web-public/assets/` when the report website is
-generated (`python -m src.report.generate`, optionally with `--mode private` or
-`--mode public`).
+`web/assets/` when the report website is generated
+(`python -m src.report.generate`).
 
 ## ApexCharts 4.7.0
 
