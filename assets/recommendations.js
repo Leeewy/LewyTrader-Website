@@ -371,20 +371,10 @@
   function selectMainList(report, runId) {
     var byRun = report.recommendations_by_run || {};
     var runs = report.recommendation_runs || [];
-    var latest =
-      (runs[0] && runs[0].run_id) ||
-      (report.recommendations && report.recommendations.run_id) ||
-      "";
+    var latest = (runs[0] && runs[0].run_id) || "";
     var wanted = runId || latest;
     if (wanted && byRun[wanted]) {
       return { mainList: byRun[wanted], runId: wanted, latestRunId: latest };
-    }
-    if (report.recommendations) {
-      return {
-        mainList: report.recommendations,
-        runId: report.recommendations.run_id,
-        latestRunId: latest,
-      };
     }
     return null;
   }

@@ -9,7 +9,6 @@
     { id: "1Y", days: 365 },
     { id: "3Y", days: 1095 },
     { id: "5Y", days: 1825 },
-    { id: "MAX", days: null },
   ];
 
   var DEFAULT_RANGE = "1Y";
@@ -36,10 +35,6 @@
     }
 
     var max = parseDate(dates[dates.length - 1]);
-    if (days === null) {
-      return { min: parseDate(dates[0]), max: max };
-    }
-
     var minDate = new Date(max);
     minDate.setDate(minDate.getDate() - days);
     var min = Math.max(parseDate(dates[0]), minDate.getTime());
@@ -105,37 +100,6 @@
     );
   }
 
-  function chartUrl(ticker, variant) {
-    return "data/charts/" + encodeURIComponent(ticker) + "-" + variant + ".json";
-  }
-
-  function loadFullChart(ticker) {
-    return fetch(chartUrl(ticker, "full")).then(function (response) {
-      if (!response.ok) {
-        throw new Error("Failed to load full chart data.");
-      }
-      return response.json();
-    });
-  }
-
-  function setChartLoading(container, show, message) {
-    var loading = container.querySelector(".chart-loading");
-    if (show) {
-      if (!loading) {
-        loading = document.createElement("div");
-        loading.className = "chart-loading";
-        loading.setAttribute("role", "status");
-        container.appendChild(loading);
-      }
-      loading.textContent = message || "Loading full history…";
-      loading.classList.remove("hidden");
-      return;
-    }
-    if (loading) {
-      loading.classList.add("hidden");
-    }
-  }
-
   function readChartTheme() {
     var styles = getComputedStyle(document.documentElement);
     var isDark = document.documentElement.getAttribute("data-theme") === "dark";
@@ -165,7 +129,7 @@
     };
   }
 
-  function initPriceChart(container, chartData, ticker) {
+  function initPriceChart(container, chartData) {
     if (!container || !chartData || !chartData.dates || !chartData.dates.length) {
       return null;
     }
@@ -181,9 +145,6 @@
     var chartHost = container.querySelector("#price-chart");
     var toolbar = container.querySelector(".chart-range-toolbar");
     var initialRange = rangeBounds(chartData, 365);
-    var activeChartData = chartData;
-    var fullChartData = null;
-    var fullChartPromise = null;
 
     var chartTheme = readChartTheme();
     var chart = new ApexCharts(chartHost, {
@@ -294,27 +255,7 @@
     }
 
     function applyRange(rangeId) {
-      if (rangeId === "MAX" && ticker && !fullChartData) {
-        if (!fullChartPromise) {
-          setChartLoading(container, true);
-          fullChartPromise = loadFullChart(ticker)
-            .then(function (fullData) {
-              fullChartData = fullData;
-              activeChartData = fullData;
-              applyRangeToChart("MAX", fullData);
-            })
-            .catch(function () {
-              setChartLoading(container, true, "Unable to load full history.");
-            })
-            .finally(function () {
-              setChartLoading(container, false);
-            });
-        }
-        return;
-      }
-
-      var data = fullChartData || activeChartData;
-      applyRangeToChart(rangeId, data);
+      applyRangeToChart(rangeId, chartData);
     }
 
     if (toolbar) {

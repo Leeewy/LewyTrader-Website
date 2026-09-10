@@ -65,9 +65,6 @@
     if (runs.length && runs[0].run_id) {
       return runs[0].run_id;
     }
-    if (report.recommendations && report.recommendations.run_id) {
-      return report.recommendations.run_id;
-    }
     return "";
   }
 
@@ -109,13 +106,9 @@
         latestRunId: latest,
       };
     }
-    var embedded =
-      report.companies &&
-      report.companies[ticker] &&
-      report.companies[ticker].recommendation;
     return {
-      recommendation: embedded || null,
-      runId: embedded && embedded.run_id ? embedded.run_id : latest,
+      recommendation: null,
+      runId: latest,
       latestRunId: latest,
     };
   }
@@ -786,7 +779,10 @@
       "</div></section>" +
       section("Static Research", opportunity.body, opportunity.headingExtra) +
       section("Fundamentals", metricGrid(view.fundamentals)) +
-      section("Technical Indicators", metricGrid(view.indicators))
+      section("Technical Indicators", metricGrid(view.indicators)) +
+      (view.benchmark && view.benchmark.length
+        ? section("Market context", metricGrid(view.benchmark))
+        : "")
     );
   }
 
@@ -840,7 +836,7 @@
     loadShortChart(ticker)
       .then(function (chartData) {
         chartPanel.innerHTML = "";
-        window.LewyTrader.initPriceChart(chartPanel, chartData, ticker);
+        window.LewyTrader.initPriceChart(chartPanel, chartData);
         chartPanel.setAttribute("data-chart-ready", "true");
       })
       .catch(function () {
