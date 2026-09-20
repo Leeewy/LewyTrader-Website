@@ -92,12 +92,12 @@
     return window.LewyTrader.renderScoreCircle(score, recType, small);
   }
 
-  function aiCell(attractiveness, conviction) {
-    return escapeHtml(window.LewyTrader.formatAiCell(attractiveness, conviction));
+  function formatOpportunity(value) {
+    return window.LewyTrader.formatResearchScore(value);
   }
 
-  function formatOpportunity(value) {
-    return window.LewyTrader.formatScore1dp(value);
+  function formatConviction(value) {
+    return escapeHtml(window.LewyTrader.formatIntScore(value));
   }
 
   function priceDisplayFor(report, ticker) {
@@ -129,8 +129,8 @@
 
     if (!view) {
       cells.typeValue = "not_evaluated";
-      cells.aiHtml = "—";
-      cells.scoreHtml = scoreCircle(entry.score, "", true);
+      cells.convictionHtml = "—";
+      cells.scoreHtml = scoreCircle(null, "", true);
       cells.rowClass =
         "recommendation-row not-evaluated outcome-" + escapeHtml(state);
       return cells;
@@ -140,8 +140,12 @@
     var conviction = view.conviction || {};
     cells.typeValue = escapeHtml(recType);
     // No-action table uses the compact ring; buy/sell cards use full size.
-    cells.scoreHtml = scoreCircle(entry.score, recType, recType === "NO_ACTION");
-    cells.aiHtml = aiCell(view.attractiveness_score, conviction.score);
+    cells.scoreHtml = scoreCircle(
+      view.attractiveness_score,
+      recType,
+      recType === "NO_ACTION"
+    );
+    cells.convictionHtml = formatConviction(conviction.score);
     cells.rowClass =
       "recommendation-row type-" +
       escapeHtml((recType || "none").toLowerCase()) +
@@ -200,8 +204,8 @@
       "</div>" +
       '<div class="rec-card-aside">' +
       '<div class="rec-card-metrics">' +
-      metricHtml("AI", cells.aiHtml) +
-      metricHtml("Research", cells.opportunityHtml) +
+      metricHtml("Conviction", cells.convictionHtml) +
+      metricHtml("Static Research", cells.opportunityHtml) +
       "</div>" +
       cells.scoreHtml +
       "</div>" +
@@ -222,7 +226,7 @@
       '</td><td><span class="tag-row">' +
       cells.tableTagsHtml +
       '</span></td><td><span class="rec-card-metric-value">' +
-      cells.aiHtml +
+      cells.convictionHtml +
       '</span></td><td><span class="rec-card-metric-value">' +
       cells.opportunityHtml +
       "</span></td><td>" +

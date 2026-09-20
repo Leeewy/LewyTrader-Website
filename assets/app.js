@@ -298,23 +298,19 @@
     return currency ? text + " " + currency : text;
   }
 
-  function formatScore1dp(value) {
+  function formatResearchScore(value) {
     if (value === null || value === undefined) {
       return EMPTY;
     }
     var number = Number(value);
-    if (Number.isNaN(number)) {
+    if (!Number.isFinite(number)) {
       return EMPTY;
     }
-    return number.toFixed(1);
+    return String(Math.round(number));
   }
 
-  function formatAiCell(attractiveness, conviction) {
-    if (!Number.isInteger(attractiveness)) {
-      return EMPTY;
-    }
-    var convictionText = Number.isInteger(conviction) ? String(conviction) : EMPTY;
-    return String(attractiveness) + " (" + convictionText + ")";
+  function formatIntScore(value) {
+    return Number.isInteger(value) ? String(value) : EMPTY;
   }
 
   var SCORE_CIRCLE_VARIANTS = { BUY: "buy", SELL: "sell" };
@@ -327,7 +323,7 @@
     // Colour tracks recommendation type; size only from ``small``.
     var variant = scoreCircleVariant(recType || "");
     var size = small ? " score-circle-sm" : "";
-    var text = typeof score === "number" && !Number.isNaN(score) ? formatScore1dp(score) : EMPTY;
+    var text = Number.isInteger(score) ? String(score) : EMPTY;
     return (
       '<span class="score-circle score-circle-' +
       variant +
@@ -357,8 +353,8 @@
   window.LewyTrader.metricHtml = metricHtml;
   window.LewyTrader.formatHorizon = formatHorizon;
   window.LewyTrader.formatMoneyAmount = formatMoneyAmount;
-  window.LewyTrader.formatScore1dp = formatScore1dp;
-  window.LewyTrader.formatAiCell = formatAiCell;
+  window.LewyTrader.formatResearchScore = formatResearchScore;
+  window.LewyTrader.formatIntScore = formatIntScore;
   window.LewyTrader.scoreCircleVariant = scoreCircleVariant;
   window.LewyTrader.renderScoreCircle = renderScoreCircle;
   window.LewyTrader.isDegradedState = isDegradedState;

@@ -82,6 +82,7 @@
           opportunity_score: entries[i].opportunity_score,
           score: entries[i].score,
           view: entries[i].view || null,
+          market_intelligence: entries[i].market_intelligence || null,
         };
       }
     }
@@ -92,6 +93,7 @@
       opportunity_score: null,
       score: null,
       view: null,
+      market_intelligence: null,
     };
   }
 
@@ -203,11 +205,11 @@
   }
 
   function formatOpportunity(value) {
-    return window.LewyTrader.formatScore1dp(value);
+    return window.LewyTrader.formatResearchScore(value);
   }
 
-  function aiCell(attractiveness, conviction) {
-    return escapeHtml(window.LewyTrader.formatAiCell(attractiveness, conviction));
+  function formatConviction(value) {
+    return escapeHtml(window.LewyTrader.formatIntScore(value));
   }
 
   function recommendationType(recommendation) {
@@ -219,15 +221,15 @@
     var view = recommendation && recommendation.view;
     var conviction = (view && view.conviction) || {};
     var attractiveness = view ? view.attractiveness_score : null;
-    var aiHtml = view ? aiCell(attractiveness, conviction.score) : EMPTY;
+    var convictionHtml = view ? formatConviction(conviction.score) : EMPTY;
     var researchHtml = escapeHtml(
       formatOpportunity(recommendation && recommendation.opportunity_score)
     );
     return {
-      aiHtml: aiHtml,
+      convictionHtml: convictionHtml,
       researchHtml: researchHtml,
       scoreHtml: scoreCircle(
-        recommendation && recommendation.score,
+        attractiveness,
         recommendationType(recommendation),
         false
       ),
@@ -239,8 +241,8 @@
     var metrics = metricsBundle(recommendation);
     return (
       '<div class="rec-card-metrics company-metrics">' +
-      metricHtml("AI", metrics.aiHtml) +
-      metricHtml("Research", metrics.researchHtml) +
+      metricHtml("Conviction", metrics.convictionHtml) +
+      metricHtml("Static Research", metrics.researchHtml) +
       "</div>" +
       metrics.scoreHtml
     );
@@ -332,22 +334,30 @@
       })
       .join("");
 
+    // Visible label matches AI Analysis Score; tooltip stays Static Research
+    // because this number is the latest Phase 01 score, not attractiveness.
     var headingExtra =
       '<div class="company-section-score">' +
-      metricHtml("latest data", escapeHtml(opportunity.score)) +
+      toolbarField(
+        "Score",
+        escapeHtml(formatOpportunity(opportunity.score)),
+        "Static Research"
+      ) +
       "</div>";
 
     return {
       body:
+        '<div class="rec-analysis-stack">' +
         '<div class="strength-risk-grid"><div class="strength-risk-panel"><h3>Strengths</h3>' +
         factorList(opportunity.strengths, "strength") +
         '</div><div class="strength-risk-panel"><h3>Risks</h3>' +
         factorList(opportunity.risks, "risk") +
         "</div></div>" +
+        '<div class="rec-section-card">' +
         '<table class="data-table factor-table"><thead><tr><th>Factor</th><th>Value</th>' +
         "<th>Score</th><th>Explanation</th></tr></thead><tbody>" +
         factorRows +
-        "</tbody></table>",
+        "</tbody></table></div></div>",
       headingExtra: headingExtra,
     };
   }
@@ -387,25 +397,16 @@
     return window.LewyTrader.formatHorizon(horizon);
   }
 
-  // Labels are inlined from src/report/evidence_labels.py as
-  // window.LewyTrader.snapshotEvidenceLabels / mirFindingLabel.
+  // Snapshot labels are inlined from src/report/evidence_labels.py as
+  // window.LewyTrader.snapshotEvidenceLabels. MIR findings render in the
+  // Market Intelligence section, not as generic evidence chips.
   function snapshotEvidenceLabels() {
     return (window.LewyTrader && window.LewyTrader.snapshotEvidenceLabels) || {};
-  }
-
-  function mirFindingLabel() {
-    return (
-      (window.LewyTrader && window.LewyTrader.mirFindingLabel) ||
-      "Market intelligence finding"
-    );
   }
 
   function machineEvidenceRef(item) {
     if (!item || typeof item !== "object") {
       return "";
-    }
-    if (item.type === "mir_finding" && item.id) {
-      return "mir_finding:" + item.id;
     }
     if (item.type === "snapshot" && item.path) {
       return "snapshot:" + item.path;
@@ -417,13 +418,139 @@
     if (!item || typeof item !== "object") {
       return null;
     }
-    if (item.type === "mir_finding" && item.id) {
-      return mirFindingLabel();
-    }
     if (item.type === "snapshot" && item.path) {
       return snapshotEvidenceLabels()[item.path] || item.path;
     }
     return null;
+  }
+
+  function titleCaseToken(value) {
+    return String(value || "")
+      .replace(/_/g, " ")
+      .replace(/\b\w/g, function (letter) {
+        return letter.toUpperCase();
+      });
+  }
+
+  function directionBadgeVariant(direction) {
+    if (direction === "positive") {
+      return "type-buy";
+    }
+    if (direction === "negative") {
+      return "type-sell";
+    }
+    return "type-none";
+  }
+
+  function safeHttpUrl(value) {
+    if (!value || typeof value !== "string") {
+      return null;
+    }
+    var trimmed = value.trim();
+    var lower = trimmed.toLowerCase();
+    if (lower.indexOf("https://") === 0 || lower.indexOf("http://") === 0) {
+      return trimmed;
+    }
+    return null;
+  }
+
+  function renderFindingSources(sources) {
+    var items = sources || [];
+    if (!items.length) {
+      return "";
+    }
+    return (
+      '<ul class="mir-finding-sources">' +
+      items
+        .map(function (source) {
+          var title = source.title || "";
+          var href = safeHttpUrl(source.url);
+          var titleHtml = href
+            ? '<a href="' +
+              escapeHtml(href) +
+              '" rel="noopener noreferrer" target="_blank">' +
+              escapeHtml(title || href) +
+              "</a>"
+            : escapeHtml(title);
+          var meta = [];
+          if (source.type) {
+            meta.push(escapeHtml(titleCaseToken(source.type)));
+          }
+          if (source.published_at) {
+            meta.push(escapeHtml(String(source.published_at).slice(0, 10)));
+          }
+          var metaHtml = meta.length
+            ? '<span class="muted"> · ' + meta.join(" · ") + "</span>"
+            : "";
+          return "<li>" + titleHtml + metaHtml + "</li>";
+        })
+        .join("") +
+      "</ul>"
+    );
+  }
+
+  function analysisSection(title, bodyHtml) {
+    var g = glossaryMarkup(title);
+    return (
+      '<section class="rec-section-card">' +
+      '<h3 class="rec-subsection-title' +
+      g.className +
+      '"' +
+      g.tip +
+      ">" +
+      escapeHtml(title) +
+      "</h3>" +
+      bodyHtml +
+      "</section>"
+    );
+  }
+
+  function renderMarketIntelligence(marketIntelligence) {
+    var body;
+    if (!marketIntelligence) {
+      body =
+        '<p class="muted">Market intelligence was not recorded for this review.</p>';
+    } else {
+      var findings = marketIntelligence.findings || [];
+      if (findings.length) {
+        body =
+          '<div class="mir-finding-list">' +
+          findings
+            .map(function (finding) {
+              var badges =
+                '<div class="badge-row mir-finding-meta">' +
+                badge(
+                  titleCaseToken(finding.direction),
+                  directionBadgeVariant(finding.direction)
+                ) +
+                (finding.materiality
+                  ? badge(titleCaseToken(finding.materiality), "neutral")
+                  : "") +
+                "</div>";
+              return (
+                '<article class="mir-finding">' +
+                badges +
+                '<p class="prose mir-finding-statement">' +
+                escapeHtml(finding.statement) +
+                "</p>" +
+                renderFindingSources(finding.sources) +
+                "</article>"
+              );
+            })
+            .join("") +
+          "</div>";
+      } else if (marketIntelligence.availability === "unavailable") {
+        body =
+          '<p class="muted">Market intelligence was not available for this review.</p>';
+      } else if (marketIntelligence.availability === "available") {
+        body =
+          '<p class="muted">No material public news was identified for this review.</p>';
+      } else {
+        body =
+          '<p class="muted">Market intelligence was not recorded for this review.</p>';
+      }
+    }
+    return analysisSection("Market Intelligence", body);
   }
 
   function renderLevels(levels, currency) {
@@ -456,40 +583,49 @@
     if (!items.length) {
       return "";
     }
-    return '<h3 class="rec-subsection-title">Actionable levels</h3>' + metricGrid(items);
+    return (
+      '<div class="rec-levels-block">' +
+      '<h3 class="rec-subsection-title">Actionable levels</h3>' +
+      metricGrid(items) +
+      "</div>"
+    );
   }
 
   function renderEvidence(evidence) {
-    var items = (evidence || []).filter(function (item) {
-      return formatEvidenceRef(item);
+    var raw = evidence || [];
+    var items = raw.filter(function (item) {
+      return item && item.type === "snapshot" && formatEvidenceRef(item);
     });
     if (!items.length) {
-      return (
-        '<h3 class="rec-subsection-title">Evidence</h3>' +
-        '<p class="muted">No supporting evidence recorded.</p>'
-      );
+      if (!raw.length) {
+        return analysisSection(
+          "Evidence",
+          '<p class="muted">No supporting evidence recorded.</p>'
+        );
+      }
+      return "";
     }
-    return (
-      '<h3 class="rec-subsection-title">Evidence</h3>' +
+    return analysisSection(
+      "Evidence",
       '<div class="tag-row">' +
-      items
-        .map(function (item) {
-          var label = formatEvidenceRef(item);
-          var machine = machineEvidenceRef(item);
-          var g = glossaryMarkup(label);
-          var tip = g.tip || (machine ? ' data-tip="' + escapeHtml(machine) + '"' : "");
-          return (
-            '<span class="tag term-hint"' +
-            tip +
-            ' data-evidence-ref="' +
-            escapeHtml(machine) +
-            '">' +
-            escapeHtml(label) +
-            "</span>"
-          );
-        })
-        .join("") +
-      "</div>"
+        items
+          .map(function (item) {
+            var label = formatEvidenceRef(item);
+            var machine = machineEvidenceRef(item);
+            var g = glossaryMarkup(label);
+            var tip = g.tip || (machine ? ' data-tip="' + escapeHtml(machine) + '"' : "");
+            return (
+              '<span class="tag term-hint"' +
+              tip +
+              ' data-evidence-ref="' +
+              escapeHtml(machine) +
+              '">' +
+              escapeHtml(label) +
+              "</span>"
+            );
+          })
+          .join("") +
+        "</div>"
     );
   }
 
@@ -549,15 +685,17 @@
     return parts.join("");
   }
 
-  function scoreField(valueHtml) {
-    var g = glossaryMarkup("Score (Convince)");
+  function toolbarField(label, valueHtml, tipTerm) {
+    var g = glossaryMarkup(tipTerm || label);
     return (
       '<div class="filter-field filter-field-score">' +
       '<span class="filter-label' +
       g.className +
       '"' +
       g.tip +
-      ">Score (Convince)</span>" +
+      ">" +
+      escapeHtml(label) +
+      "</span>" +
       '<span class="score-value">' +
       valueHtml +
       "</span></div>"
@@ -580,40 +718,52 @@
   }
 
   function renderAnalysisToolbar(recommendation, runSelectorHtml, horizonHtml) {
-    var metrics = metricsBundle(recommendation);
+    var view = recommendation && recommendation.view;
+    var conviction = (view && view.conviction) || {};
+    var attractiveness = view ? view.attractiveness_score : null;
+    var scoreHtml = view
+      ? escapeHtml(window.LewyTrader.formatIntScore(attractiveness))
+      : EMPTY;
+    var convictionHtml = view
+      ? escapeHtml(window.LewyTrader.formatIntScore(conviction.score))
+      : EMPTY;
     return (
       '<div class="company-analysis-toolbar">' +
       "<h2>" +
       "AI Analysis" +
       "</h2>" +
-      scoreField(metrics.aiHtml) +
+      toolbarField("Score", scoreHtml) +
+      toolbarField("Conviction", convictionHtml) +
       (horizonHtml || "") +
       (runSelectorHtml || "") +
       "</div>"
     );
   }
 
-  function renderAnalyzedBody(view, currency) {
+  function renderAnalyzedBody(view, currency, marketIntelligence) {
     var conviction = view.conviction || {};
-    var snapshotHint = glossaryMarkup("Snapshot");
     return (
-      '<h3 class="rec-subsection-title' +
-      snapshotHint.className +
-      '"' +
-      snapshotHint.tip +
-      ">Snapshot</h3>" +
-      proseBlock(conviction.explanation, "No snapshot recorded.") +
-      '<h3 class="rec-subsection-title">Rationale</h3>' +
-      proseBlock(view.rationale, "No rationale recorded.") +
-      '<h3 class="rec-subsection-title">Investment thesis</h3>' +
-      proseBlock(view.investment_thesis, "No investment thesis recorded.") +
-      '<div class="strength-risk-grid"><div class="strength-risk-panel"><h3>Strengths</h3>' +
-      factorList(view.strengths || [], "strength") +
-      '</div><div class="strength-risk-panel"><h3>Risks</h3>' +
-      factorList(view.risks || [], "risk") +
-      "</div></div>" +
+      '<div class="rec-analysis-stack">' +
+      analysisSection(
+        "Snapshot",
+        proseBlock(conviction.explanation, "No snapshot recorded.")
+      ) +
+      renderMarketIntelligence(marketIntelligence) +
+      analysisSection(
+        "Rationale",
+        proseBlock(view.rationale, "No rationale recorded.")
+      ) +
+      analysisSection(
+        "Investment thesis",
+        proseBlock(view.investment_thesis, "No investment thesis recorded.")
+      ) +
+      '<div class="strength-risk-grid">' +
+      analysisSection("Strengths", factorList(view.strengths || [], "strength")) +
+      analysisSection("Risks", factorList(view.risks || [], "risk")) +
+      "</div>" +
       renderLevels(view.levels, currency) +
-      renderEvidence(view.evidence)
+      renderEvidence(view.evidence) +
+      "</div>"
     );
   }
 
@@ -621,10 +771,16 @@
     return (
       '<p class="muted rec-null-attractiveness">Attractiveness is null because ' +
       "analysis did not run for this ticker.</p>" +
-      '<h3 class="rec-subsection-title">Rationale</h3>' +
-      proseBlock(view.rationale, "No rationale recorded.") +
-      '<h3 class="rec-subsection-title">Investment thesis</h3>' +
-      proseBlock(view.investment_thesis, "No investment thesis recorded.")
+      '<div class="rec-analysis-stack">' +
+      analysisSection(
+        "Rationale",
+        proseBlock(view.rationale, "No rationale recorded.")
+      ) +
+      analysisSection(
+        "Investment thesis",
+        proseBlock(view.investment_thesis, "No investment thesis recorded.")
+      ) +
+      "</div>"
     );
   }
 
@@ -669,7 +825,7 @@
     var currency = view.instrument_currency || "";
     var body = window.LewyTrader.isAnalysisNotRunState(state)
       ? renderAnalysisNotRunBody(view)
-      : renderAnalyzedBody(view, currency);
+      : renderAnalyzedBody(view, currency, recommendation.market_intelligence);
 
     // Accepted calls are already conveyed by the score ring colour; keep
     // badges and callouts for degraded / incomplete states only.
@@ -722,7 +878,7 @@
         '<summary class="company-chart-toggle">' +
         '<span class="company-chart-chevron" aria-hidden="true"></span>' +
         "<span>Price Chart</span></summary>" +
-        '<div class="company-chart-body">' +
+        '<div class="company-chart-body rec-section-card">' +
         '<div class="chart-panel" id="price-chart-panel" aria-label="Historical price chart for ' +
         escapeHtml(view.ticker) +
         '"></div></div></details>'
