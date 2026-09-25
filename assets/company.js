@@ -505,6 +505,23 @@
     );
   }
 
+  function newsCoverageNotice(marketIntelligence) {
+    var coverage = marketIntelligence && marketIntelligence.news_coverage;
+    if (coverage === "partial") {
+      return (
+        '<p class="muted">News coverage for this review is incomplete. ' +
+        "That is not the same as no material news.</p>"
+      );
+    }
+    if (coverage === "none") {
+      return (
+        '<p class="muted">News was not available for this review. ' +
+        "That is not the same as no material news.</p>"
+      );
+    }
+    return "";
+  }
+
   function renderMarketIntelligence(marketIntelligence) {
     var body;
     if (!marketIntelligence) {
@@ -512,8 +529,10 @@
         '<p class="muted">Market intelligence was not recorded for this review.</p>';
     } else {
       var findings = marketIntelligence.findings || [];
+      var coverageNote = newsCoverageNotice(marketIntelligence);
       if (findings.length) {
         body =
+          coverageNote +
           '<div class="mir-finding-list">' +
           findings
             .map(function (finding) {
@@ -541,10 +560,18 @@
           "</div>";
       } else if (marketIntelligence.availability === "unavailable") {
         body =
+          coverageNote +
           '<p class="muted">Market intelligence was not available for this review.</p>';
       } else if (marketIntelligence.availability === "available") {
-        body =
-          '<p class="muted">No material public news was identified for this review.</p>';
+        if (
+          marketIntelligence.news_coverage === "partial" ||
+          marketIntelligence.news_coverage === "none"
+        ) {
+          body = coverageNote;
+        } else {
+          body =
+            '<p class="muted">No material public news was identified for this review.</p>';
+        }
       } else {
         body =
           '<p class="muted">Market intelligence was not recorded for this review.</p>';
